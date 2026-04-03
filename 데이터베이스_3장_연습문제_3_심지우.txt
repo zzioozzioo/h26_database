@@ -1,0 +1,193 @@
+문제 20.
+(1) 단순질의
+①모든 극장의 이름과 위치를 보이시오
+select 극장이름, 위치 from 극장;
+
+②‘잠실’에 있는 극장을 보이시오
+select 극장이름, 위치 from 극장 where 위치 = '잠실';
+
+③‘잠실’에 사는 고객의 이름을 오름차순으로 보이시오
+select 이름 from 고객 where 주소='잠실' order by 이름 asc;
+
+④가격이 8,000원 이하인 영화의 극장번호,영화제목을 보이시오
+select t.극장번호, m.영화제목 from 극장 t 
+join 상영관 m on t.극장번호 = m.극장번호
+where m.가격 <= 8000;
+
+⑤극장 위치와 고객의 주소가 같은 고객을 보이시오
+select distinct c.이름 from 고객 c
+join 극장 t on t.위치 = c.주소;
+
+(2) 집계질의
+①극장의 수는 몇 개인가?
+select count(극장번호) from 극장;
+
+②상영되는 영화의 평균 가격은 얼마인가?
+select avg(가격) from 상영관;
+
+③2025년 9월 1일에 영화를 관람한 고객의 수는 얼마인가?
+select count(distinct c.고객번호) as 고객수 from 고객 c 
+join 예약 r on c.고객번호 = r.고객번호
+where r.날짜 = TO_DATE('2025-09-01');
+
+(3) 부속질의와 조인
+①‘대한’극장에서 상영된 영화 제목을 보이시오
+select m.영화제목 from 상영관 m
+join 극장 t on m.극장번호 = t.극장번호
+where t.극장이름 = '대한';
+
+②‘대한’극장에서 영화를 본 고객의 이름을 보이시오
+select c.이름 from 고객 c
+join 예약 r on c.고객번호 = r.고객번호
+join 극장 t on t.극장번호 = r.극장번호
+where t.극장이름 = '대한';
+
+③‘대한'극장의 전체 수입을 보이시오
+select sum(m.가격) as 전체수입 from 상영관 m
+join 극장 t on m.극장번호 = t.극장번호
+join 예약 r on r.극장번호 = t.극장번호 
+where t.극장이름 = '대한';
+
+(4) 그룹질의
+①극장별 상영관 수를 보이시오
+select 극장번호, count(상영관번호) as 극장별상영관수 from 상영관
+group by 극장번호;
+
+②‘잠실’에 있는 극장의 상영관을 보이시오
+select t.극장번호, m.상영관번호 from 상영관 m
+join 극장 t on m.극장번호 = t.극장번호
+where t.위치 = '잠실';
+
+③2025년 9월 1일의 극장별 평균 관람 고객 수를 보이시오
+select t.극장이름, count(r.좌석번호) as "관람 고객 수" from 예약 r
+join 극장 t on r.극장번호 = t.극장번호
+where r.날짜 = TO_DATE('2025-09-01')
+group by t.극장이름;
+
+④2025년 9월 1일에 가장 많은 고객이 관람한 영화를 보이시오
+select m.영화제목, count(r.고객번호) as "관람 고객 수" from 상영관 m
+join 예약 r on m.극장번호 = r.극장번호 and m.상영관번호 = r.상영관번호
+where r.날짜 = TO_DATE('2025-09-01')
+group by m.영화제목
+order by "관람 고객 수" desc
+fetch first 1 rows only;
+
+(5)DML
+①각 테이블에 데이터를 삽입하는 INSERT문을 하나씩 실행시켜 보시오.
+-- 1. 극장 테이블: '판교극장' 추가
+INSERT INTO 극장 (극장번호, 극장이름, 위치) 
+VALUES (9, '판교극장', '분당');
+
+-- 2. 상영관 테이블: 판교극장 1관에 '인사이드아웃2' 추가
+INSERT INTO 상영관 (극장번호, 상영관번호, 영화제목, 가격, 좌석수) 
+VALUES (9, 1, '인사이드아웃2', 15000, 100);
+
+-- 3. 고객 테이블: 새로운 고객 '이철희' 추가
+INSERT INTO 고객 (고객번호, 이름, 주소) 
+VALUES (12, '이철희', '경기도 성남시');
+
+-- 4. 예약 테이블: 이철희 고객이 판교극장을 예약
+INSERT INTO 예약 (극장번호, 상영관번호, 고객번호, 좌석번호, 날짜) 
+VALUES (9, 1, 12, 55, '26/04/03');
+
+COMMIT;
+
+②영화의 가격을 10%씩 인상하시오
+UPDATE 상영관 
+SET 가격 = 가격 * 1.1;
+
+COMMIT;
+
+-------------------------------------------------------------
+문제 21.
+(1)테이블을 생성하는 CREATE 문과 데이터를 삽입하는 INSERT문을 작성하시오. 
+테이블의 데이터 타입은 임의로 정하고, 데이터는 다음 질의의 결과가 나오도록 
+삽입한다.
+기존 데이터 사용
+
+(2)모든 판매원의 이름과 급여를 보이시오. 단 중복 행은 제거한다.
+select distinct name, salary from Salesperson;
+
+(3)나이가 30세 미만인 판매원의 이름을 보이시오.
+select name from Salesperson
+where age < 30;
+
+(4)‘산’으로 끝나는 도시에 사는 고객의 이름을 보이시오.
+select name from Customer2
+where city like '%산';
+
+(5)주문을 한 고객의 수(서로 다른 고객만)를 구하시오.
+select count(distinct c.name) as "주문 고객 수" from Customer2 c
+join Order2 o on c.name = o.custname;
+
+(6)판매원 각각에 대하여 주문의 수를 계산하시오.
+select s.name, count(distinct o.num) as "주문 수" from Order2 o
+join Salesperson s on o.salesperson = s.name
+group by s.name;
+
+(7)‘서울’에 사는 고객으로부터 주문을 받은 판매원의 이름과 나이를 보이시오.(부속질의 사용)
+select name, age from Salesperson
+where name in (
+	select salesperson from Order2 where custname in (
+		select name from Customer2 where city = '서울'
+	)
+);
+
+(8)‘서울’에 사는 고객으로부터 주문을 받은 판매원의 이름과 나이를 보이시오.(조인 
+사용)
+select s.name, s.age from Salesperson s
+join Order2 o on o.salesperson = s.name
+join Customer2 c on c.name = o.custname
+where c.city = '서울';
+
+(9)두 번 이상 주문을 받은 판매원의 이름을 보이시오.
+select salesperson from Order2
+group by salesperson
+having count(*) >= 2;
+
+(10)판매원 ‘TOM’의 봉급을 45,000원으로 변경하는 sql문을 작성하시오
+update Salesperson set salary = 45000
+where name = 'TOM';
+
+----------------------------------------------------------------------
+문제 22.
+(1)테이블을 생성하는 CREATE문과 데이터를 삽입하는 INSERT문을 작성하시오. 
+테이블의 데이터 타입은 임의로 정하고, 데이터는 다음 질의의 결과가 나오도록 
+삽입한다.
+기존 데이터 사용
+
+(2)모든 사원의 이름을 보이시오
+select name from Employee;
+
+(3)여자 사원의 이름을 보이시오
+select name from Employee where sex = '여';
+
+(4)팀장(manager)의 이름을 보이시오
+select name from Employee where position = '부장';
+
+(5)‘IT’부서에서 일하는 사원의 이름과 주소를 보이시오
+select e.name, e.address from Employee e
+join Department d on e.deptno = d.deptno
+where d.dname = 'IT'
+
+(6)‘홍길동’ 팀장(manager)부서에서 일하는 사원의 수를 보이시오
+select count(*) as "사원 수" from Employee
+where deptno = (select deptno from Employee where name = '홍길동');
+
+(7)사원들이 일한 시간 수를 부서별, 사원 이름별 오름차순으로 보이시오
+select e.deptno, e.name, w.hours from Employee e
+join works_on w on e.empno = w.empno
+order by e.deptno, e.name;
+
+(8)2명 이상의 사원이 참여한 프로젝트의 번호, 이름, 사원의 수를 보이시오
+select p.pno, p.pname, count(w.empno) as "사원 수" from Project p
+join works_on w on p.pno = w.pno
+group by p.pno, p.pname
+having count(w.empno) >= 2;
+
+(9)3명 이상의 사원이 있는 부서의 사원 이름을 보이시오
+select name from Employee where deptno in (
+	select deptno from Employee 
+	group by deptno
+	having count(*) >= 3
+);

@@ -1,0 +1,298 @@
+2장-19번
+1)도착지가 제주인 항공편에 대한 정보를 보이시오
+select fid, fdate, time from Flight where dest = '제주';
+
+2)출발지가 김포(src)이고 도착지가 제주(dest)인 항공편에 대한 정보를 보이시오
+select fid, fdate, time from Flight where src = '김포' and dest = '제주';
+
+3)고객번호가 100번인 승객이 2025년1월 1일 이후에 탑승한 비행기 번호(fid)를 보이시오
+select fid from Booking where pid = 100 and fdate >= TO_DATE('2025-01-01');
+
+4)예약을 한 적이 있는 고객의 이름(pname)을 보이시오
+select distinct p.pname from Passenger p join Booking b on p.pid = b.pid;
+
+5)예약을 한 적이 없는 고객의 이름(pname)을 보이시오
+select distinct p.pname from Passenger p where not exists (select 1 from booking b where b.pid = p.pid);
+
+6)고객번호가 100번인 승객이 거주하는 도시(pcity)와 같은 도시에 위치한 여행사(aname)의 
+이름을 보이시오
+select a.aname from Agency a join Passenger p on a.acity = p.pcity where p.pid = 100;
+
+7)2025년 1월 1일부터 1월 30일 사이에 출발시각이 16:00이후인 항공편 정보를 보이시오
+select fid, fdate, time, src, dest from Flight where fdate >= TO_DATE('2025-01-01') and fdate <= TO_DATE('2025-01-30') and time >= '16:00';
+
+8)고객번호가 100번인 승객이 한 번도 예약하지 않은 여행사의 이름(aname)을 보이시오
+select a.aname from Agency a where not exists (select 1 from Booking b where b.pid = 100);
+
+9)마당여행사(aname)를 통해 예약한 남자 승객(pgender)의 정보를 보이시오
+select distinct p.pid, p.pname, p.pcity from Passenger p 
+join Booking b on p.pid = b.pid and p.pgender = '남'
+join Agency a on b.aid = a.aid and a.aname = '마당여행사';
+
+----------------------------------------------------------------------------------------
+2장-20번
+1)각 릴레이션의 기본키를 정하시오
+Employee - empno
+Department - deptno
+Project - projno
+Works - empno + projno (복합키)
+
+2)릴레이션 간의 관계를 고려하여 외래키를 찾아보시오
+
+3)모든 직원의 이름을 보이시오
+select name from Employee;
+
+4)성별이 여자인 직원의 이름을 보이시오
+select name from Employee where sex = '여';
+
+5)부서장(manager)의 이름과 주소를 보이시오
+select e.name, e.address from Employee e
+join Department d on e.deptno = d.deptno
+where d.manager is not null;
+?? 왜 틀렷지
+
+6)IT부서에서 근무하는 직원의 이름과 주소를 보이시오
+select e.name, e.address from Employee e 
+join Department d on e.deptno = d.deptno
+where d.deptname = 'IT부서';
+
+7)‘미래’라는 이름의 프로젝트에서 일하는 직원의 이름을 보이시오
+select e.name from Employee e
+join Works w on e.empno = w.empno
+join Project p on p.projno = w.projno
+where p.projname = '미래';
+
+------------------------------------------------------------------
+3장-01
+(1) 도서번호가 1인 도서의 이름
+select bookname from Book where bookid=1;
+
+(2) 가격이 20,000원 이상인 도서의 이름
+select bookname from Book where price >= 20000;
+
+(3)‘박지성’의 총구매액을 구하시오
+select sum(o.saleprice) from Orders o
+join Customer c on o.custid = c.custid
+where c.name = '박지성';
+
+(4)‘박지성’이 구매한 도서의 수를 구하시오
+select count(o.bookid) from Orders o
+join Customer c on o.custid = c.custid
+where c.name = '박지성';
+
+(5)‘박지성’이 구매한 도서의 출판사 수를 구하시오
+select count(b.publisher) from Book b
+join Orders o on b.bookid = o.bookid
+join Customer c on o.custid = c.custid
+where c.name = '박지성';
+
+select count(b.publisher from Book b
+join Orders o on b.bookid = o.bookid
+join Customer c on o.custid = c.custid
+where c.name = '박지성';
+
+(6)‘박지성’이 구매한 도서의 이름, 가격, 정가와 판매가격의 차이를 구하시오
+select b.bookname, b.price, (b.price-o.saleprice) from Book b
+join Orders o on b.bookid = o.bookid
+join Customer c on o.custid= c.custid
+where c.name = '박지성';
+
+(7)‘박지성’이 구매하지 않은 도서의 이름을 구하시오
+select b.bookname from Book b 
+where not exists (
+select 1 from Orders o join Customer c
+on o.custid = c.custid and c.name = '박지성'
+where o.bookid = b.bookid
+);
+
+-----------------------------------------------------------------------------
+3장-02
+(1) 마당서점 도서의 총수를 구하시오
+select count(bookid) from Book;
+
+(2)마당서점에 도서를 출고하는 출판사의 총 수를 구하시오
+select count(publisher) from Book;
+
+(3)모든 고객의 이름, 주소를 구하시오
+select name, address from Customer;
+
+(4)2025년 7월 4일부터 7월 7일 사이에 주문받은 도서의 주문번호를 구하시오
+select orderid from Orders
+where orderdate >= TO_DATE('2025-07-04') and orderdate <= TO_DATE('2025-07-07');
+
+(5)2025년 7월 4일부터 7월 7일 사이에 주문받은 도서를 제외한 도서의 주문번호를 구하시오
+select orderid from Orders 
+where orderdate < TO_DATE('2025-07-04') or orderdate > TO_DATE('2025-07-07');
+
+select orderid from Orders 
+where not (orderdate >= TO_DATE('2025-07-04') and orderdate <= TO_DATE('2025-07-07'));
+
+(6)성이 ‘김’씨인 고객의 이름과 주소를 구하시오
+select name, address from Customer where name like '김%';
+
+(7)성이 ‘김’씨이고 이름이 ‘아’로 끝나는 고객의 이름과 주소를 구하시오
+select name, address from Customer where name like '김%아';
+
+(8)주문하지 않은 고객의 이름(부속질의 사용)을 구하시오
+select c.name from Customer c 
+where not exists (
+select 1 from Orders o
+where c.custid = o.custid);
+
+(9)주문 금액의 총액과 주문의 평균금액을 구하시오
+select sum(saleprice), avg(saleprice) from Orders;
+
+(10)고객의 이름과 고객별 구매액을 구하시오
+select c.name, sum(o.saleprice) as totalSalePrice from Customer c
+join Orders o on c.custid = o.custid
+group by c.name;
+
+(11)고객의 이름과 고객이 구매한 도서 목록을 구하시오
+select c.name, b.bookname from Customer c
+join Orders o on c.custid = o.custid
+join Book b on o.bookid = b.bookid;
+
+(12)도서의 가격(Book테이블)과 판매가격(Orders 테이블)의 차이가 가장 많은 주문을 구하시
+오
+select o.orderid from Orders o
+join Book b on o.bookid = b.bookid
+where b.price - o.saleprice = (
+select max(b2.price - o2.saleprice) from Book b2
+join Orders o2 on b2.bookid = o2.bookid
+);
+
+(13)도서의 판매액 평균보다 자신의 구매액 평균이 더 높은 고객의 이름을 구하시오
+select c.name from Customer c
+join Orders o on c.custid = o.custid
+group by c.name
+having avg(o.saleprice) > (select avg(saleprice) from orders);
+
+----------------------------------------------------------------------------
+3장-03
+(1)‘박지성’이 구매한 도서의 출판사와 같은 출판사의 도서를 구매한 고객의 이름을 구하시오.
+1단계 - 박지성이 구매한 도서의 출판사 찾기
+select b.publisher from Book b
+join Orders o on b.bookid = o.bookid
+join Customer c on c.custid = o.custid
+where c.name = '박지성';
+
+2단계 - 그 출판사의 도서 찾기
+select * from Book 
+where publisher in (
+select b.publisher from Book b
+join Orders o on b.bookid = o.bookid
+join Customer c on c.custid = o.custid
+where c.name = '박지성'
+);
+
+축구의 역사
+피겨교본
+배구 단계별 기술
+
+축구의 이해
+골프 바이블
+
+축구 아는 여자
+
+3단계 - 그 도서를 구매한 고객의 이름 찾기
+select distinct c.name from Customer c
+join Orders o on c.custid = o.custid
+join Book b on b.bookid = o.bookid
+where b.bookname in (
+	select b.bookname from Book 
+	where publisher in (
+	select b.publisher from Book b
+	join Orders o on b.bookid = o.bookid
+	join Customer c on c.custid = o.custid
+	where c.name = '박지성'
+)
+);
+
+
+(2)두 개 이상의 서로 다른 출판사의 도서를 구매한 고객의 이름을 구하시오
+1단계: 고객별로 어떤 출판사 책 구매했는지 추출
+select c.name, b.publisher from Customer c 
+join Orders o on c.custid = o.custid
+join Book b on b.bookid = o.bookid;
+
+2단계: 고객별로 그룹을 묶기
+select c.name, b.publisher from Customer c 
+join Orders o on c.custid = o.custid
+join Book b on b.bookid = o.bookid
+group by c.name, b.publisher;
+
+3단계: 서로 다른 출판사의 개수 세기
+select c.name from Customer c 
+join Orders o on c.custid = o.custid
+join Book b on b.bookid = o.bookid
+group by c.name
+having count(distinct b.publisher) >= 2;
+
+
+(3)전체 고객의 30%이상이 구매한 책 리스트를 구하시오
+1단계: 전체 고객 수
+select count(*) from Customer
+
+2단계: 
+select b.bookname from book b
+join orders o on b.bookid = o.bookid
+group by b.bookid, b.bookname
+having count(distinct o.custid) >= (select count(*) from Customer) * 0.3
+
+-----------------------------------------------------------------------------
+3장-04
+마당서점 데이터베이스에서 주문에 관한 사항은 Orders테이블에 저장되어 있다. 
+Orders 테이블을 사용하여 도서번호(bookid)가 1번인 책은 주문하였으나 2번과 3번 책은 주
+문하지 않은 고객의 아이디(custid)를 찾는 SQL문을 작성하시오
+1단계: 1번 책 주문한 고객 아이디 추출
+select c.custid from Customer c
+join Orders o on c.custid = o.custid
+join Book b on b.bookid = o.bookid
+where b.bookid = 1;
+
+2단계: 1번 책 주문했지만 2번과 3번 책 주문하지 않은 고객 아이디
+select c.custid from Customer c
+join Orders o on c.custid = o.custid
+join Book b on b.bookid = o.bookid
+where b.bookid = 1 and c.custid not in (
+	select custid from orders
+	where bookid in (2, 3)
+);
+
+-----------------------------------------------------------------------------
+3장-05 다음 질의에 대해 DDL문과 DML문을 작성하시오.
+(1)새로운 도서(‘스포츠세계’,  ‘대한미디어’,  10000원)을 Book테이블에 삽입하시오. 삽입이 
+안될 경우 필요한 데이터가 더 있는지 찾아보시오
+insert into book values ('스포츠세계’,  ‘대한미디어’,  10000);
+
+(2)출판사 ‘삼성당’에서 출간한 도서를 삭제하시오
+delete from book where publisher = '삼성당';
+
+(3)출판사 ‘이상미디어’에서 출판한 도서를 삭제하시오. 삭제되지 않을 경우 그 원인을 설명하
+시오.
+delete from book where publisher = '이상미디어';
+삭제되지 않는다. 
+어떤 고객이 그 도서를 샀는지 기록되어 있는 orders 테이블에서 bookid를 참조하는데, 
+만약 book에서 책을 지워버리면 orders에 남은 기록은 미아 데이터가 되기 때문이다.
+
+(4)출판사 ‘대한미디어’를 ‘대한출판사’로 이름을 변경하시오
+update book set publisher = '대한출판사' where publisher = '대한미디어';
+
+(5)출판사에 대한 정보를 저장하는 테이블 Bookcompany(name, address, begin)을 생성하
+시오. name은 기본키(VARCHAR2(20)), address는 VARCHAR2(20), begin은 DATE타입으로 
+선언하여 생성하시오.
+create table bookcompany(
+name varchar2(20) not null primary key,
+address varchar2(20),
+begin DATE
+);
+
+(6)Bookcompany테이블에 인터넷 주소를 저장하는 webaddress 속성을 VARCHAR2(30)으로 
+추가하시오
+alter table bookcompany add webaddress varchar2(30);
+
+(7)Bookcompany테이블에 임의의 튜플 name=한빛아카데미,  address=서울시 마포구 ,  
+begin=1993-01-01,  webaddress는 http://hanbit.co.kr을 삽입하시오
+INSERT INTO Bookcompany (name, address, begin, webaddress)
+VALUES ('한빛아카데미', '서울시 마포구', TO_DATE('1993-01-01', 'yyyy-mm-dd'), 'http://hanbit.co.kr');
+

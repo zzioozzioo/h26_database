@@ -1,0 +1,187 @@
+3장 연습문제 2
+문제 7.
+(1) select A from R where A = 'a2';
+(2) select A, B from R;
+(3) select * from R join S on R.c = S.c;
+-------------------------------------------------------
+문제 10.
+(1) 주문한 적 있는 고객 조회
+select distinct c.name from Customer c 
+join Orders o on c.custid = o.custid;
+--------------------------------------------------------
+문제 17.
+CREATE TABLE Cust_addr (
+    custid    NUMBER(10),
+    addrid    NUMBER(5),
+    address   VARCHAR2(100),
+    phone     VARCHAR2(20),
+    changeday DATE,
+    CONSTRAINT PK_CUST_ADDR PRIMARY KEY (custid, addrid),
+    CONSTRAINT FK_CUST_ADDR_CUSTOMER FOREIGN KEY (custid) 
+        REFERENCES Customer(custid)
+);
+
+INSERT INTO table_name (column1, column2, column3, ...)
+VALUES (value1, value2, value3, ...);
+
+UPDATE 테이블명
+SET 열이름 = 바꿀 값 
+WHERE 열이름 = 기존값;
+
+DELETE FROM 테이블명 WHERE 열이름 = 지정된값;
+
+[Book 데이터 생성]
+INSERT INTO Book (bookid, bookname, publisher, price) VALUES (11, '데이터베이스 개론', '한빛미디어', 28000);
+INSERT INTO Book (bookid, bookname, publisher, price) VALUES (12, '자바의 정석', '길벗', 32000);
+INSERT INTO Book (bookid, bookname, publisher, price) VALUES (13, '파이썬 머신러닝', '위키북스', 25000);
+INSERT INTO Book (bookid, bookname, publisher, price) VALUES (14, '운영체제 원리', '한빛미디어', 30000);
+INSERT INTO Book (bookid, bookname, publisher, price) VALUES (15, '알고리즘 문제 풀기', '길벗', 22000);
+INSERT INTO Book (bookid, bookname, publisher, price) VALUES (16, '클린 코드', '인사이트', 33000);
+INSERT INTO Book (bookid, bookname, publisher, price) VALUES (17, 'SQL 첫걸음', '한빛미디어', 24000);
+
+[Customer 데이터 생성]
+INSERT INTO Customer (custid, name, address, phone) VALUES (6, '박지수', '서울 마포구 합정동', '010-1234-5678');
+INSERT INTO Customer (custid, name, address, phone) VALUES (7, '김도윤', '경기 성남시 분당구', '010-2345-6789');
+INSERT INTO Customer (custid, name, address, phone) VALUES (8, '이서연', '서울 강남구 역삼동', '010-3456-7890');
+INSERT INTO Customer (custid, name, address, phone) VALUES (9, '최민준', '인천 부평구 부평동', '010-4567-8901');
+INSERT INTO Customer (custid, name, address, phone) VALUES (10, '정하은', '서울 송파구 잠실동', '010-5678-9012');
+
+INSERT INTO Orders (orderid, custid, bookid, saleprice, orderdate) VALUES (1, 6, 11, 28000, TO_DATE('2026-01-05', 'YYYY-MM-DD'));
+INSERT INTO Orders (orderid, custid, bookid, saleprice, orderdate) VALUES (2, 6, 13, 23000, TO_DATE('2026-01-08', 'YYYY-MM-DD'));
+INSERT INTO Orders (orderid, custid, bookid, saleprice, orderdate) VALUES (3, 7, 12, 32000, TO_DATE('2026-01-10', 'YYYY-MM-DD'));
+INSERT INTO Orders (orderid, custid, bookid, saleprice, orderdate) VALUES (4, 7, 15, 20000, TO_DATE('2026-01-12', 'YYYY-MM-DD'));
+INSERT INTO Orders (orderid, custid, bookid, saleprice, orderdate) VALUES (5, 8, 14, 30000, TO_DATE('2026-01-15', 'YYYY-MM-DD'));
+INSERT INTO Orders (orderid, custid, bookid, saleprice, orderdate) VALUES (6, 8, 16, 31000, TO_DATE('2026-01-15', 'YYYY-MM-DD'));
+INSERT INTO Orders (orderid, custid, bookid, saleprice, orderdate) VALUES (7, 9, 17, 22000, TO_DATE('2026-01-18', 'YYYY-MM-DD'));
+INSERT INTO Orders (orderid, custid, bookid, saleprice, orderdate) VALUES (8, 10, 11, 26000, TO_DATE('2026-01-20', 'YYYY-MM-DD'));
+INSERT INTO Orders (orderid, custid, bookid, saleprice, orderdate) VALUES (9, 10, 12, 32000, TO_DATE('2026-01-22', 'YYYY-MM-DD'));
+INSERT INTO Orders (orderid, custid, bookid, saleprice, orderdate) VALUES (10, 6, 16, 33000, TO_DATE('2026-01-25', 'YYYY-MM-DD'));
+
+
+(1)고객번호 6번의 주소 변경 내역을 모두 조회하시오
+select custid, addrid, address, changedate from Cust_addr where custid = 6;
+
+(2)고객번호 6번의 전화번호 변경 내역을 모두 조회하시오
+select custid, phone, changedate from Cust_addr where custid = 6;
+
+(3)고객번호 6번의 가입 당시 전화번호를 조회하시오
+select distinct ca.custid, ca.phone from Cust_addr ca
+join Customer c on ca.phone = c.phone
+where c.custid = 6;
+
+(4)고객번호 6번의 “2025년 01월 01” 당시 전화번호를 보이시오. 주소 이력 중 changedate 속성값이 “2025년 01”보다 오래된 첫 번째 값을 찾는다.
+select custid, phone from (
+select distinct custid, phone from Cust_addr 
+where changedate < TO_DATE('2025-01-01')
+order by custid, phone
+)
+where rownum = 1;
+
+------------------------------------------------------------------------------------
+문제 18.
+CREATE TABLE Cart (
+    cartid    NUMBER(10),
+    custid    NUMBER(10),
+    bookid    NUMBER(10),
+    cartdate  DATE DEFAULT SYSDATE,
+    CONSTRAINT PK_CART PRIMARY KEY (cartid),
+    CONSTRAINT FK_CART_CUSTOMER FOREIGN KEY (custid) REFERENCES Customer(custid),
+    CONSTRAINT FK_CART_BOOK FOREIGN KEY (bookid) REFERENCES Book(bookid)
+);
+INSERT INTO Cart (cartid, custid, bookid, cartdate) VALUES (1, 6, 11, TO_DATE('2025/01/05', 'YYYY/MM/DD'));
+INSERT INTO Cart (cartid, custid, bookid, cartdate) VALUES (2, 6, 13, TO_DATE('2025/01/10', 'YYYY/MM/DD'));
+INSERT INTO Cart (cartid, custid, bookid, cartdate) VALUES (3, 7, 12, TO_DATE('2025/02/03', 'YYYY/MM/DD'));
+INSERT INTO Cart (cartid, custid, bookid, cartdate) VALUES (4, 7, 15, TO_DATE('2025/02/15', 'YYYY/MM/DD'));
+INSERT INTO Cart (cartid, custid, bookid, cartdate) VALUES (5, 8, 14, TO_DATE('2025/03/07', 'YYYY/MM/DD'));
+INSERT INTO Cart (cartid, custid, bookid, cartdate) VALUES (6, 8, 17, TO_DATE('2025/03/20', 'YYYY/MM/DD'));
+INSERT INTO Cart (cartid, custid, bookid, cartdate) VALUES (7, 9, 16, TO_DATE('2025/04/01', 'YYYY/MM/DD'));
+INSERT INTO Cart (cartid, custid, bookid, cartdate) VALUES (8, 9, 11, TO_DATE('2025/04/18', 'YYYY/MM/DD'));
+INSERT INTO Cart (cartid, custid, bookid, cartdate) VALUES (9, 10, 13, TO_DATE('2025/05/09', 'YYYY/MM/DD'));
+INSERT INTO Cart (cartid, custid, bookid, cartdate) VALUES (10, 10, 17, TO_DATE('2025/05/22', 'YYYY/MM/DD'));
+
+(1)고객번호 6번의 cart에 저장된 도서 중 이미 주문한 도서를 구하시오
+select distinct c.bookid from Cart c
+join Orders o on c.bookid = o.bookid
+where c.custid = 6;
+
+(2)고객번호 8번의  cart에 저장된 도서 중 아직 주문하지 않은 도서를 구하시오
+select distinct bookid from Cart c where custid = 8 and
+not exists (
+select 1 from Orders o
+where o.custid = c.custid
+and o.bookid = c.bookid
+);
+
+(3)고객번호 6번의 cart에 저장된 도서들의 정가 합계를 구하시오.
+select sum(b.price) from Book b 
+join Cart c on b.bookid = c.bookid
+where c.custid = 6;
+
+----------------------------------------------------------------------
+문제 19.
+(5) 사원 테이블에 다음 데이터를 삽입하려고 하니 오류가 발생하였다. 오류 메시지를 확
+인해 보고 원인을 찾아보시오
+INSERT INTO Emp (empno,ename, job,mgr, hiredate,sal,comm,deptno ) values 
+(7654,‘MARTIN’, ‘SALESMAN’,7698, ‘1981-09-2800:00:00’, 1250,1400,50);
+
+-> 외래키 제약 조건 위반
+
+(6)각 사원의 사원이름(ename)과 소속 부서이름(dname), 부서위치(loc)를 함께 조회하시
+오
+select e.ename, d.dname, d.loc from emp e
+join dept d on e.deptno = d.deptno;
+
+(7)부서가 배정된 사원의 사원번호(empno), 사원이름(ename), 부서이름(dname)을 조회하
+시오. 부서가 없는 사원은 제외한다.
+select e.empno, e.ename, d.dname from emp e
+join dept d on e.deptno = d.deptno;
+
+(8)부서 위치(loc)가 'DALLAS'인 부서에 소속된 모든 사원의 이름(ename), 업무(job), 월
+급여(sal)를 조회하시오.
+select e.ename, e.job, e.sal from emp e
+join dept d on e.deptno = d.deptno
+where d.loc = 'DALLAS';
+
+(9)부서 위치(loc)가 'DALLAS'인 부서에 소속된 사원의 이름(ename), 업무(job)를 조회하
+시오. 서브쿼리를 사용할 것
+select ename, job from emp where deptno = (
+	select deptno from dept where loc = 'DALLAS'
+);
+
+(10)전체 사원의 평균 급여(AVG(sal))보다 급여가 높은 사원의 이름(ename)과 급여(sal)를 
+조회하시오.
+select ename, sal from emp
+where (select avg(sal) from emp) < sal;
+
+(11)각 사원의 이름(ename)과 그 사원의 직속상사 이름을 함께 조회하시오. 상사가 없는 
+사원도 포함할 것.
+select e.ename as "사원 이름", m.ename as "직속상사 이름" from emp e
+left outer join emp m on e.mgr = m.empno;
+
+(12)각 부서에서 급여가 가장 높은 사원의 이름(ename), 급여(sal), 부서이름(dname)을 조
+회하시오. 조인과 서브쿼리를 함께 사용할 것.
+select e.ename, e.sal, d.dname from emp e 
+join dept d on e.deptno = d.deptno
+where (e.deptno, e.sal) in (
+	select deptno, max(sal) from emp
+	group by deptno
+);
+
+1단계: 부서별 가장 높은 급여 추출
+select deptno, max(sal) from emp
+	group by deptno
+
+2단계: 이름, 급여, 부서이름 조회
+select e.ename, e.sal, d.dname from emp e 
+join dept d on e.deptno = d.deptno
+
+3단계: 메인쿼리와 연결
+
+
+(13)부서 테이블의 구조를 변경하여 부서장의 이름을 저장하는 manager속성을 추가하고
+자 한다. ALTER 문을 사용하여 작성해 보시오. managername 속성이 만들어졌으면 
+UPDATE문을 이용하여  MANAGER의 이름을 입력하시오
+alter table dept add managername varchar(20);
+update dept set managername = 'clark' where deptno = 10; 
+update dept set managername = 'jones' where deptno = 20; 
+update dept set managername = 'blake' where deptno = 30;

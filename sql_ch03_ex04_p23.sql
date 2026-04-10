@@ -5,9 +5,8 @@
 select ename as "사원이름", job as "사원업무" from emp;
 
 -- 2. 30번 부서에 근무하는 모든 사원의 이름과 급여를 출력하시오
-select ename, sal from emp e
-join dept d on e.deptno = d.deptno
-where d.deptno = 30;
+select ename, sal from emp
+where deptno = 30;
 
 -- 3. 사원번호와 이름, 현재급여, 증가된 급여분(열 이름은  증가액), 10% 인상된 급여(열 이름은  '인상된 급여')를 
 -- 사원 번호 순으로 출력하시오.

@@ -244,6 +244,7 @@ create view v_book_price_stats as
 -- 사원 데이터베이스 예제 --
 -- 문제 1.
 -- 모든 사원의 사원번호, 이름, 부서명, 직급, 급여를 보여주는 뷰 v_emp_basic을 작성하시오.
+
 create view v_emp_basic as
     select e.empid, e.name, d.deptname, e.position, e.salary
     from employee e
@@ -315,10 +316,33 @@ create view v_top_executive as
     join department d on e.deptid = d.deptid
     where e.managerid is null and e.salary >= 7000000;
 
+
+
+-- 문제 2.
+-- 급여가 500만원 이상인 사원의 이름, 직급, 급여, 부서명을 보여주는 읽기 전용 뷰 v_high_salary_emp를 작성하시오.
+-- 문제 3.
+-- 현재 진행 중인 프로젝트(오늘 날짜가 시작일과 종료일 사이)의 프로젝트번호, 프로젝트명, 시작일, 종료일을 보여주는 뷰 v_active_projects를 작성하시오.
+-- 문제 4.
+-- 입사일이 2019년 이전인 사원의 사원번호, 이름, 부서명, 입사일, 근속연수를 보여주는 뷰 v_veteran_employee를 작성하시오. (근속연수는 현재 연도 기준으로 계산)
+-- 문제 5.
+-- 부서 위치가 '서울'인 부서의 부서번호, 부서명, 예산을 보여주는 뷰 v_seoul_department를 작성하시오.
+-- 문제 6.
+-- 직급이 '부장' 또는 '이사'인 사원의 사원번호, 이름, 직급, 급여를 보여주는 읽기 전용 뷰 v_senior_position를 작성하시오.
+-- 문제 7.
+-- 프로젝트에서 'PM' 역할을 담당하는 사원의 사원번호, 프로젝트번호, 담당역할, 투입시간을 보여주는 뷰 v_pm_role을 작성하시오.
+-- 문제 8.
+-- 급여가 300만원 미만인 사원 중 입사일이 2022년 이후인 사원의 이름, 직급, 급여, 입사일을 보여주는 뷰 v_junior_emp를 작성하시오.
+-- 문제 9.
+-- 예산이 1억원 이상인 프로젝트의 프로젝트명, 시작일, 종료일, 예산을 보여주는 읽기 전용 뷰 v_large_budget_project를 작성하시오.
+-- 문제 10.
+-- 관리자가 없는 최상위 관리자이면서 급여가 700만원 이상인 사원의 사원번호, 이름, 부서명, 직급, 급여를 보여주는 읽기 전용 뷰 v_top_executive를 작성하시오.
+
+
 -- 복합 뷰 예제 --
 -- 문제 1.
 -- 부서별 평균 급여와 최고 급여, 최저 급여를 보여주는 뷰 v_dept_salary_stats를 작성하시오.
 -- (출력 컬럼: 부서명, 평균급여, 최고급여, 최저급여)
+
 create view v_dept_salary_stats as
     select d.deptname, avg(e.salary) as "평균급여", max(e.salary) as "최고급여", min(e.salary) as "최저급여"
     from employee e
@@ -416,3 +440,27 @@ create view v_dept_pm_stats as
     join employee e on d.deptid = e.deptid
     join project_assignment pa on e.empid = pa.empid and pa.role = 'PM'
     group by d.deptname;
+
+-- 문제 2.
+-- 각 사원이 참여한 프로젝트 수와 총 투입시간을 보여주는 뷰 v_emp_project_summary를 작성하시오.
+-- (출력 컬럼: 사원이름, 참여프로젝트수, 총투입시간)
+-- 문제 3.
+-- 부서별 예산 대비 해당 부서 사원들의 평균 급여 비율을 보여주는 뷰 v_dept_budget_ratio를 작성하시오. (출력 컬럼: 부서명, 부서예산, 평균급여, 급여예산비율) 
+-- 단, 급여예산비율은 소수점 2자리까지 표시한다.
+-- 문제 4.
+-- 현재 진행 중인 프로젝트에 참여하고 있는 사원의 이름, 부서명, 프로젝트명, 담당역할을 보여주는 뷰 v_active_project_emp를 작성하시오.
+-- 문제 5.
+-- 한 번도 프로젝트에 참여하지 않은 사원의 사원번호, 이름, 부서명, 직급을 보여주는 뷰 v_no_project_emp를 작성하시오.
+-- 문제 6.
+-- 프로젝트별 참여 사원 수와 총 투입시간, 평균 투입시간을 보여주는 뷰 v_project_stats를 작성하시오. 
+-- (출력 컬럼: 프로젝트명, 참여사원수, 총투입시간, 평균투입시간)
+-- 문제 7.
+-- 자신이 속한 부서의 평균 급여보다 높은 급여를 받는 사원의 이름, 부서명, 급여, 부서평균급여를 보여주는 뷰 v_above_dept_avg를 작성하시오.
+-- 문제 8.
+-- 각 부서에서 가장 오래 근무한 사원의 이름, 부서명, 입사일, 근속연수를 보여주는 뷰 v_longest_serving를 작성하시오.
+-- 문제 9.
+-- 2개 이상의 프로젝트에 참여하면서 총 투입시간이 100시간 이상인 사원의 이름, 참여 프로젝트수, 총 투입 시간을 보여주는 뷰 v_active_emp를 작성하시오.
+-- 문제 10.
+-- 부서별로 'PM' 역할을 맡은 사원 수와 해당 부서의 평균 급여를 보여주는 뷰 v_dept_pm_stats를 작성하시오.
+-- (출력 컬럼: 부서명, PM수, 부서평균급여)
+

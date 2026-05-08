@@ -320,29 +320,74 @@ create view v_top_executive as
 
 -- 문제 2.
 -- 급여가 500만원 이상인 사원의 이름, 직급, 급여, 부서명을 보여주는 읽기 전용 뷰 v_high_salary_emp를 작성하시오.
+create view v_high_salary_emp as 
+    select e.name, e.position, e.salary, d.deptname
+    from employee e
+    join department d on e.deptid = d.deptid
+    where e.salary >= 5000000;
+
 -- 문제 3.
 -- 현재 진행 중인 프로젝트(오늘 날짜가 시작일과 종료일 사이)의 프로젝트번호, 프로젝트명, 시작일, 종료일을 보여주는 뷰 v_active_projects를 작성하시오.
+create view v_active_projects as
+    select projectid, projectname, startdate, enddate
+    from project
+    where sysdate between startdate and enddate;
+
 -- 문제 4.
 -- 입사일이 2019년 이전인 사원의 사원번호, 이름, 부서명, 입사일, 근속연수를 보여주는 뷰 v_veteran_employee를 작성하시오. (근속연수는 현재 연도 기준으로 계산)
+create view v_vetran_employee as
+    select e.empid, e.name, d.deptname, e.hiredate, (extract(year from sysdate) - extract(year from e.hiredate)) as "근속연수"
+    from employee e
+    join department d on e.deptid = d.deptid
+    where e.hiredate < to_date('2019-01-01', 'YYYY-MM-DD');
+
 -- 문제 5.
 -- 부서 위치가 '서울'인 부서의 부서번호, 부서명, 예산을 보여주는 뷰 v_seoul_department를 작성하시오.
+create view v_seoul_department
+    select deptid, deptname, budget
+    from department
+    where location = '서울';
+
 -- 문제 6.
 -- 직급이 '부장' 또는 '이사'인 사원의 사원번호, 이름, 직급, 급여를 보여주는 읽기 전용 뷰 v_senior_position를 작성하시오.
+create view v_senior_position as 
+    select empid, name, position, salary
+    from employee
+    where position in ('부장', '이사');
+
 -- 문제 7.
 -- 프로젝트에서 'PM' 역할을 담당하는 사원의 사원번호, 프로젝트번호, 담당역할, 투입시간을 보여주는 뷰 v_pm_role을 작성하시오.
+create view v_pm_role as
+    select empid, projectid, role, hours
+    from project_assignment
+    where role = 'PM';
+
 -- 문제 8.
 -- 급여가 300만원 미만인 사원 중 입사일이 2022년 이후인 사원의 이름, 직급, 급여, 입사일을 보여주는 뷰 v_junior_emp를 작성하시오.
+create view v_junior_emp as
+    select name, position, salary, hiredate
+    from employee
+    where salary < 3000000 and hiredate > to_date('2022-01-01', 'YYYY-MM-DD');
+
 -- 문제 9.
 -- 예산이 1억원 이상인 프로젝트의 프로젝트명, 시작일, 종료일, 예산을 보여주는 읽기 전용 뷰 v_large_budget_project를 작성하시오.
+create view v_large_budget_project as
+    select projectname, startdate, enddate, budget
+    from project
+    where budget >= 100000000;
+
 -- 문제 10.
 -- 관리자가 없는 최상위 관리자이면서 급여가 700만원 이상인 사원의 사원번호, 이름, 부서명, 직급, 급여를 보여주는 읽기 전용 뷰 v_top_executive를 작성하시오.
-
+create view v_top_executive as
+    select e.empid, e.name, d.deptname, e.position, e.salary
+    from employee e
+    join department d on e.deptid = d.deptid
+    where e.managerid is null and e.salary >= 7000000;
 
 -- 복합 뷰 예제 --
 -- 문제 1.
 -- 부서별 평균 급여와 최고 급여, 최저 급여를 보여주는 뷰 v_dept_salary_stats를 작성하시오.
 -- (출력 컬럼: 부서명, 평균급여, 최고급여, 최저급여)
-
 create view v_dept_salary_stats as
     select d.deptname, avg(e.salary) as "평균급여", max(e.salary) as "최고급여", min(e.salary) as "최저급여"
     from employee e
@@ -444,23 +489,90 @@ create view v_dept_pm_stats as
 -- 문제 2.
 -- 각 사원이 참여한 프로젝트 수와 총 투입시간을 보여주는 뷰 v_emp_project_summary를 작성하시오.
 -- (출력 컬럼: 사원이름, 참여프로젝트수, 총투입시간)
+create view v_emp_project_summary as
+    select e.name, count(pa.projectid) as "참여프로젝트수", sum(pa.hours) as "총투입시간"
+    from employee e
+    left join project_assignment pa on e.empid = pa.empid
+    group by e.empid, e.name;
+
 -- 문제 3.
 -- 부서별 예산 대비 해당 부서 사원들의 평균 급여 비율을 보여주는 뷰 v_dept_budget_ratio를 작성하시오. (출력 컬럼: 부서명, 부서예산, 평균급여, 급여예산비율) 
 -- 단, 급여예산비율은 소수점 2자리까지 표시한다.
+create view v_dept_budget_ratio as
+    select d.deptname, d.budget, avg(e.salary) as "평균급여", round((avg(e.salary) / d.budget) * 100, 2) as "급여예산비율"
+    from department d
+    join employee e on d.deptid = e.deptid
+    group by d.deptname, d.budget;
+
 -- 문제 4.
 -- 현재 진행 중인 프로젝트에 참여하고 있는 사원의 이름, 부서명, 프로젝트명, 담당역할을 보여주는 뷰 v_active_project_emp를 작성하시오.
+create view v_active_project_emp as
+    select e.name, d.deptname, p.projectname, pa.role
+    from employee e
+    join department d on e.deptid = d.deptid
+    join project_assignment pa on e.empid = pa.empid
+    join project p on pa.projectid = p.projectid
+    where sysdate between p.startdate and p.enddate;
+
 -- 문제 5.
 -- 한 번도 프로젝트에 참여하지 않은 사원의 사원번호, 이름, 부서명, 직급을 보여주는 뷰 v_no_project_emp를 작성하시오.
+create view v_no_project_emp as
+    select e.empid, e.name, d.deptname, e.position
+    from employee e
+    join department d on e.deptid = d.deptid
+    where not exists (
+        select 1 from project_assignment pa 
+        where e.empid = pa.empid
+    );
 -- 문제 6.
 -- 프로젝트별 참여 사원 수와 총 투입시간, 평균 투입시간을 보여주는 뷰 v_project_stats를 작성하시오. 
 -- (출력 컬럼: 프로젝트명, 참여사원수, 총투입시간, 평균투입시간)
+create view v_project_stats as
+    select p.projectname, count(pa.empid) as "참여사원수", sum(pa.hours) as "총투입시간", avg(pa.hours) as "평균투입시간"
+    from project p
+    join project_assignment pa on p.projectid = pa.projectid
+    group by p.projectname;
+
 -- 문제 7.
 -- 자신이 속한 부서의 평균 급여보다 높은 급여를 받는 사원의 이름, 부서명, 급여, 부서평균급여를 보여주는 뷰 v_above_dept_avg를 작성하시오.
+create view v_above_dept_avg as
+    select e.name, d.deptname, e.salary, dept_avg."부서평균급여"
+    from employee e
+    join department d on e.deptid = d.deptid
+    join (
+        select deptid, avg(salary) as "부서평균급여"
+        from employee
+        group by deptid
+    ) dept_avg on d.deptid = dept_avg.deptid
+    where e.salary > dept_avg."부서평균급여";
+
 -- 문제 8.
 -- 각 부서에서 가장 오래 근무한 사원의 이름, 부서명, 입사일, 근속연수를 보여주는 뷰 v_longest_serving를 작성하시오.
+create view v_longest_serving as
+    select e.name, d.deptname, e.hiredate, (extract(year from sysdate) - extract(year from e.hiredate)) as "근속연수"
+    from employee e
+    join department d on e.deptid = d.deptid
+    where (extract(year from sysdate) - extract(year from e.hiredate)) = (
+        select max(extract(year from sysdate) - extract(year from hiredate))
+        from employee e2
+        where e2.deptid = d.deptid
+    );
+
 -- 문제 9.
 -- 2개 이상의 프로젝트에 참여하면서 총 투입시간이 100시간 이상인 사원의 이름, 참여 프로젝트수, 총 투입 시간을 보여주는 뷰 v_active_emp를 작성하시오.
+create view v_active_emp as
+    select e.name, count(pa.projectid) as "참여 프로젝트수", sum(pa.hours) as "총 투입 시간"
+    from employee e
+    join project_assignment pa on e.empid = pa.empid
+    group by e.empid, e.name
+    having count(pa.projectid) >= 2 and sum(pa.hours) >= 100;
+
 -- 문제 10.
 -- 부서별로 'PM' 역할을 맡은 사원 수와 해당 부서의 평균 급여를 보여주는 뷰 v_dept_pm_stats를 작성하시오.
 -- (출력 컬럼: 부서명, PM수, 부서평균급여)
-
+create view v_dept_pm_stats as
+    select d.deptname, count(distinct pa.empid) as "PM수", avg(e.salary) as "부서평균급여"
+    from department d
+    join employee e on d.deptid = e.deptid
+    join project_assignment pa on e.empid = pa.empid and pa.role = 'PM'
+    group by d.deptname;

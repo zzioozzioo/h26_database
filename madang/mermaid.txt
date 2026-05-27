@@ -1,0 +1,51 @@
+graph TD
+    %% 스타일 정의
+    classDef main fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef user fill:#bbf,stroke:#333,stroke-width:1px;
+    classDef admin fill:#ffb,stroke:#333,stroke-width:1px;
+    classDef common fill:#dfd,stroke:#333,stroke-width:1px;
+
+    %% 메인 구조
+    Root[마당 서점 시스템] --> GNB[메인 네비게이션]
+    Root --> Admin[관리자 대시보드]
+
+    %% 일반 메뉴 (GNB)
+    GNB --> Home[홈/메인]
+    GNB --> Search[도서 검색/전시]
+    GNB --> Community[커뮤니티]
+    GNB --> Auth[인증 센터]
+    GNB --> Cart[장바구니]
+    GNB --> MyPage[마이페이지]
+
+    %% 세부 메뉴 - 인증 (추가된 부분)
+    Auth --> Login[로그인]
+    Auth --> SignUp[회원가입]
+
+    %% 세부 메뉴 - 검색 및 전시
+    Search --> Best[베스트셀러]
+    Search --> New[신간 도서]
+    Search --> Category[카테고리별 목록]
+    Category --> Detail[도서 상세 페이지]
+
+    %% 세부 메뉴 - 커뮤니티
+    Community --> Review[도서 리뷰/평점]
+    
+    %% 세부 메뉴 - 사용자/마이페이지
+    MyPage --> OrderHistory[주문/배송 조회]
+    MyPage --> InfoEdit[회원 정보 수정]
+
+    %% 장바구니 이후 흐름 연결
+    Cart --> Order[주문/결제]
+
+    %% 관리자 메뉴
+    Admin --> MemberMgmt[회원 관리]
+    Admin --> GoodsMgmt[상품 관리]
+    Admin --> AuthorMgmt[작가 관리]
+    Admin --> OrderMgmt[전체 주문 관리]
+    Admin --> Statistics[매출/통계]
+
+    %% 클래스 적용
+    class Root main;
+    class Home,Search,Best,New,Category,Detail,Review common;
+    class MyPage,Cart,Order,OrderHistory,InfoEdit,Auth,Login,SignUp user;
+    class Admin,MemberMgmt,GoodsMgmt,AuthorMgmt,OrderMgmt,Statistics admin;

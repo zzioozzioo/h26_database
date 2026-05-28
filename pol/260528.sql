@@ -1,0 +1,291 @@
+--1) [브랜드] & [상품]별 주문수량 합계를 표시하되, 상품명과 입수는 스칼라쿼리와 인라인뷰를 이용해 표시
+SELECT BRAND_CD, ITEM_CD, SUM_QTY
+        , (SELECT S1.ITEM_NM
+             FROM A_ITEM S1
+            WHERE S1.BRAND_CD = M1.BRAND_CD
+              AND S1.ITEM_CD = M1.ITEM_CD
+          ) AS ITEM_NM
+        , (SELECT S1.QTY_IN_BOX
+             FROM A_ITEM S1
+            WHERE S1.BRAND_CD = M1.BRAND_CD
+              AND S1.ITEM_CD = M1.ITEM_CD
+          ) AS QTY_IN_BOX
+  FROM (
+        SELECT D.BRAND_CD, D.ITEM_CD, SUM(D.ORDER_QTY) AS SUM_QTY
+          FROM A_OUT_D D
+         GROUP BY D.BRAND_CD, D.ITEM_CD
+       ) M1
+ ORDER BY M1.BRAND_CD, M1.ITEM_CD
+;
+
+-- SELECT를 한 번만 쓰는 대신 (QTY_IN_BOX, ITEM_NM) 문자열 결합, 해체
+SELECT BRAND_CD, ITEM_CD, SUM_QTY
+        , (SELECT LPAD(S1.QTY_IN_BOX, 5, '0') || '-' || S1.ITEM_NM
+             FROM A_ITEM S1
+            WHERE S1.BRAND_CD = M1.BRAND_CD
+              AND S1.ITEM_CD = M1.ITEM_CD
+          ) AS ITEM_NM
+  FROM (
+        SELECT D.BRAND_CD, D.ITEM_CD, SUM(D.ORDER_QTY) AS SUM_QTY
+          FROM A_OUT_D D
+         GROUP BY D.BRAND_CD, D.ITEM_CD
+       ) M1
+ ORDER BY M1.BRAND_CD, M1.ITEM_CD
+;
+
+-- JOIN 사용
+SELECT M1.BRAND_CD, M1.ITEM_CD, C1.ITEM_NM, C1.QTY_IN_BOX, SUM(ORDER_QTY) AS SUM_QTY
+  FROM A_OUT_D M1
+        JOIN A_ITEM C1 ON C1.BRAND_CD = M1.BRAND_CD
+                      AND C1.ITEM_CD = M1.ITEM_CD
+ GROUP BY M1.BRAND_CD, M1.ITEM_CD, C1.ITEM_NM, C1.QTY_IN_BOX
+;
+ 
+--2) 위의 결과에 인라인뷰를 적용하여 박스수와 낱개수량을 함께 표시
+SELECT M2.BRAND_CD, M2.ITEM_CD, M2.ITEM_NM, M2.QTY_IN_BOX, M2.SUM_QTY
+        , TRUNC(M2.SUM_QTY / M2.QTY_IN_BOX) AS BOX_CNT -- 몫
+        , MOD(M2.SUM_QTY, M2.QTY_IN_BOX) AS PCS -- 나머지
+  FROM (
+        SELECT M1.BRAND_CD, M1.ITEM_CD, C1.ITEM_NM, C1.QTY_IN_BOX, SUM(ORDER_QTY) AS SUM_QTY
+          FROM A_OUT_D M1
+               JOIN A_ITEM C1 ON C1.BRAND_CD = M1.BRAND_CD
+                      AND C1.ITEM_CD = M1.ITEM_CD
+         GROUP BY M1.BRAND_CD, M1.ITEM_CD, C1.ITEM_NM, C1.QTY_IN_BOX
+       ) M2
+;
+
+--3) 위의 결과에 인라인뷰를 적용하여 박스수가 가장 많은 TOP3만 표시
+SELECT M3.BRAND_CD, M3.ITEM_CD, M3.ITEM_NM, M3.QTY_IN_BOX, M3.SUM_QTY, M3.BOX_CNT, M3.PCS
+  FROM (
+        SELECT M2.BRAND_CD, M2.ITEM_CD, M2.ITEM_NM, M2.QTY_IN_BOX, M2.SUM_QTY
+                , TRUNC(M2.SUM_QTY / M2.QTY_IN_BOX) AS BOX_CNT -- 몫
+                , MOD(M2.SUM_QTY, M2.QTY_IN_BOX) AS PCS -- 나머지
+          FROM (
+                SELECT M1.BRAND_CD, M1.ITEM_CD, C1.ITEM_NM, C1.QTY_IN_BOX, SUM(ORDER_QTY) AS SUM_QTY
+                  FROM A_OUT_D M1
+                       JOIN A_ITEM C1 ON C1.BRAND_CD = M1.BRAND_CD
+                              AND C1.ITEM_CD = M1.ITEM_CD
+                 GROUP BY M1.BRAND_CD, M1.ITEM_CD, C1.ITEM_NM, C1.QTY_IN_BOX
+               ) M2
+         ORDER BY BOX_CNT DESC
+       ) M3
+ WHERE ROWNUM <= 3
+;
+
+--4) QTY_IN_BOX를 이용하여 ORDER_QTY에 대한 박스 수, 낱개, 그리고 낱개 분량을 1박스로 카운팅하는 총 박스 수를 구하기
+-- ORDER_QTY가 많은 TOP5 구하기
+-- 인라인뷰 반드시 사용하기
+SELECT * FROM LO_OUT_D;
+
+SELECT ITEM_CD, QTY_IN_BOX, SUM_QTY, BOX_CNT, PCS_CNT, BOX_CNT_TOT
+  FROM ( --2단계. 박스수, 낱개, 총박스수 구하기
+        SELECT ITEM_CD, QTY_IN_BOX, SUM_QTY
+                ,TRUNC(SUM_QTY / QTY_IN_BOX) AS BOX_CNT
+                ,MOD(SUM_QTY, QTY_IN_BOX) AS PCS_CNT
+                ,CEIL(SUM_QTY / QTY_IN_BOX) AS BOX_CNT_TOT
+          FROM ( --1단계. 상품별 주문수량 합계 구하기
+                SELECT ITEM_CD, QTY_IN_BOX, SUM(ORDER_QTY) AS SUM_QTY
+                  FROM LO_OUT_D 
+                 WHERE INVOICE_NO BETWEEN '346724706262' AND '346724706762'
+                 GROUP BY ITEM_CD, QTY_IN_BOX
+                 ORDER BY SUM_QTY DESC
+               )
+       ) -- 조인할 필요가 없으면 별칭 안 줘도 됨
+ WHERE ROWNUM <= 5;
+  
+  
+-- NULL 관련 함수 예제
+--1)
+SELECT PAY, BONUS, (PAY*12 + BONUS) AS SALARY
+  FROM (
+        SELECT 1000 AS PAY, 100 AS BONUS FROM DUAL
+        UNION ALL
+        SELECT 1000 AS PAY, 0 AS BONUS FROM DUAL
+        UNION ALL
+        SELECT 1000 AS PAY, NULL AS BONUS FROM DUAL
+       )
+;
+ --2)
+ SELECT PAY, BONUS, (PAY*12 + NVL(BONUS,0)) AS SALARY
+  FROM (
+        SELECT 1000 AS PAY, 100 AS BONUS FROM DUAL
+        UNION ALL
+        SELECT 1000 AS PAY, 0 AS BONUS FROM DUAL
+        UNION ALL
+        SELECT 1000 AS PAY, NULL AS BONUS FROM DUAL
+       )
+;
+
+SELECT NULL AS FROM DUAL WHERE 1=1;
+SELECT NULL AS FROM DUAL WHERE 1=2;
+
+SELECT NVL(MAX(NULL), 'HELLO') AS VAL
+  FROM DUAL
+ WHERE 1=2;
+
+SELECT NVL(NULL, 'HELLO') AS VAL
+  FROM DUAL
+ WHERE 1=2;
+ 
+SELECT MAX(1)
+  FROM DUAL
+ WHERE 1 = 2;
+ 
+
+--1) 1001 브랜드의 주문내역을 표시하되, 출고일자에 해당하는 요일 컬럼을 추가하여 표시
+SELECT OUTBOUND_DATE, TO_CHAR(OUTBOUND_DATE, 'DY') AS DY, INVOICE_NO, ORDER_NM
+  FROM A_OUT_M 
+ WHERE BRAND_CD = '1001'
+;
+
+--2) 위의 내용에 인보이스 번호가 짝수인지 홀수인지에 대한 컬럼을 추가하여 표시
+SELECT OUTBOUND_DATE, TO_CHAR(OUTBOUND_DATE, 'DY') AS DY
+        , INVOICE_NO
+        , CASE MOD(SUBSTR(INVOICE_NO, -1), 2) WHEN 0 THEN '짝' ELSE '홀' END AS EVENODD
+--        , DECODE(MOD(SUBSTR(INVOICE_NO, -1), 2), 0, '짝', '홀') AS EVENODD
+        , ORDER_NM
+  FROM A_OUT_M 
+ WHERE BRAND_CD = '1001'
+;
+
+--3) [브랜드]별로 몇 개씩의 인보이스를 처리했는지 표시
+SELECT BRAND_CD, COUNT(INVOICE_NO) 
+  FROM A_OUT_M
+ GROUP BY BRAND_CD
+;
+
+--4) [브랜드] & [요일]별로 몇 개씩의 인보이스를 처리했는지 표시
+SELECT BRAND_CD, TO_CHAR(OUTBOUND_DATE, 'DY') AS DY
+      , COUNT(INVOICE_NO) AS INVOICE_CNT 
+  FROM A_OUT_M
+ GROUP BY BRAND_CD, TO_CHAR(OUTBOUND_DATE, 'DY')
+ ORDER BY BRAND_CD, DY DESC
+;
+
+--5) [브랜드] & [인보이스 번호의 홀/짝]별로 주문수량의 합계 표시
+SELECT BRAND_CD
+        , CASE MOD(SUBSTR(INVOICE_NO, -1), 2) WHEN 0 THEN '짝' ELSE '홀' END AS EVENODD
+        , SUM(ORDER_QTY) AS INVOICE_CNT 
+  FROM A_OUT_D
+ GROUP BY BRAND_CD, CASE MOD(SUBSTR(INVOICE_NO, -1), 2) WHEN 0 THEN '짝' ELSE '홀' END
+;
+
+
+-- 실전문제 1) 요일을 표시하는 내장함수 사용하기
+SELECT INVOICE_NO, OUTBOUND_DATE,  TO_CHAR(OUTBOUND_DATE, 'DY') AS DAY, OUTBOUND_NO
+  FROM LO_OUT_M
+ WHERE INVOICE_NO IN ('346724706214', '346724793596', '346724869970')
+ ORDER BY OUTBOUND_DATE, INVOICE_NO
+;
+
+-- 실전문제 2) 집계함수, 내장함수 응용하기
+SELECT NVL(TO_CHAR(SUM(ORDER_QTY)), 'Empty..') AS ORDER_QTY -- NVL은 데이터타입이 같아야 함
+  FROM LO_OUT_D
+ WHERE INVOICE_NO = '346724706214'
+;
+ 
+
+SELECT CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '01' THEN SET_QTY END AS M01
+      ,CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '02' THEN SET_QTY END AS M02
+      ,CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '03' THEN SET_QTY END AS M03
+      ,CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '04' THEN SET_QTY END AS M04
+      ,CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '05' THEN SET_QTY END AS M05
+      ,CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '06' THEN SET_QTY END AS M06
+      ,CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '07' THEN SET_QTY END AS M07
+      ,CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '08' THEN SET_QTY END AS M08
+      ,CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '09' THEN SET_QTY END AS M09
+      ,CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '10' THEN SET_QTY END AS M10
+      ,CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '11' THEN SET_QTY END AS M11
+      ,CASE TO_CHAR(OUTBOUND_DATE, 'MM') WHEN '12' THEN SET_QTY END AS M12
+  FROM LO_OUT_M
+ WHERE OUTBOUND_DATE BETWEEN TO_DATE('20190101', 'YYYY-MM-DD') AND TO_DATE('20191231', 'YYYY-MM-DD')
+;
+
+
+--1) 출고유형이 M1로 시작하면 상온, M2로 시작하면 저온이라고 표시
+SELECT OUTBOUND_DATE
+       , TO_CHAR(OUTBOUND_DATE, 'DY') AS DY
+       , INVOICE_NO
+       , CASE MOD(SUBSTR(INVOICE_NO, -1), 2) WHEN 0 THEN '짝' ELSE '홀' END AS EVENODD
+       , ORDER_NM
+       , CASE WHEN OUT_TYPE_DIV LIKE 'M1%' THEN '상온' ELSE '저온' END AS TEMP
+  FROM A_OUT_M
+;
+  
+--2) 주문수량이 1~2이면 '하', 3~4이면 '중', 5이상이면 '상’으로 표시
+SELECT BRAND_CD
+       , INVOICE_NO
+       , LINE_NO
+       , ITEM_CD
+       , ORDER_QTY
+       , CASE WHEN ORDER_QTY <= 2 THEN '하'
+              WHEN ORDER_QTY <= 4 THEN '중'
+              WHEN ORDER_QTY >= 5 THEN '상'
+--       , CASE WHEN ORDER_QTY BETWEEN 1 AND 2 THEN '하' 
+--              WHEN ORDER_QTY BETWEEN 3 AND 4 THEN '중'
+--              WHEN ORDER_QTY >= 5 THEN '상'
+       END AS GRADE
+  FROM A_OUT_D
+;
+
+--3) 브랜드 & 상온/저온 별로 몇 개의 인보이스 처리했는지 표시
+SELECT BRAND_CD
+       , CASE WHEN OUT_TYPE_DIV LIKE 'M1%' THEN '상온' ELSE '저온' END AS TEMP_DIV
+       , COUNT(INVOICE_NO)
+  FROM A_OUT_M
+ GROUP BY BRAND_CD, CASE WHEN OUT_TYPE_DIV LIKE 'M1%' THEN '상온' ELSE '저온' END
+;
+
+--4) [브랜드] & [상/중/하(인보이스 단위의 합계)]별로 몇 개의 인보이스를 처리했는지 표시
+SELECT BRAND_CD
+       , CASE WHEN SUM_QTY <= 2 THEN '하'
+              WHEN SUM_QTY <= 4 THEN '중'
+              WHEN SUM_QTY >= 5 THEN '상'
+       END AS GRADE
+       , COUNT(INVOICE_NO) AS INV_CNT
+  FROM (
+        SELECT BRAND_CD, INVOICE_NO, SUM(ORDER_QTY) AS SUM_QTY
+          FROM A_OUT_D
+         GROUP BY BRAND_CD, INVOICE_NO
+       )
+ GROUP BY BRAND_CD, CASE WHEN SUM_QTY <= 2 THEN '하'
+                         WHEN SUM_QTY <= 4 THEN '중'
+                         WHEN SUM_QTY >= 5 THEN '상' END
+;
+
+--5) [상품]별로 주문수량의 합계를 구한 다음, TOP2까지는 그대로 표시하고, 나머지 상품들은 etc로 묶어서 표시
+SELECT CASE WHEN ROWNUM <= 2 THEN ITEM_CD ELSE 'etc' END AS ITEM
+     , SUM(SUM_QTY) AS SUM_QTY
+  FROM (
+        SELECT ITEM_CD, SUM(ORDER_QTY) AS SUM_QTY
+          FROM A_OUT_D
+         GROUP BY ITEM_CD
+         ORDER BY SUM_QTY DESC
+                
+       )
+ GROUP BY CASE WHEN ROWNUM <= 2 THEN ROWNUM ELSE 999 END
+        , CASE WHEN ROWNUM <= 2 THEN ITEM_CD ELSE 'etc' END
+ ORDER BY CASE WHEN ROWNUM <= 2 THEN ITEM_CD ELSE 'etc' END
+;
+
+--6) 1001 브랜드의 주문내역을 표시하되, C 상품을 가장 먼저 표시하고, 나머지 상품은 상품코드 순으로 나열
+-- 단, 동일한 상품에 대해서는 주문수량이 많은 것부터 나열
+SELECT INVOICE_NO
+       , LINE_NO
+       , ITEM_CD
+       , ORDER_QTY
+       ,  CASE WHEN ORDER_QTY <= 2 THEN '하'
+               WHEN ORDER_QTY <= 4 THEN '중'
+               WHEN ORDER_QTY >= 5 THEN '상' END AS GRADE
+  FROM A_OUT_D
+ WHERE BRAND_CD = '1001'
+ ORDER BY 
+       CASE WHEN ITEM_CD = 'C' THEN 1
+            ELSE 2
+       END
+     , ITEM_CD
+     , ORDER_QTY DESC
+;
+
+
+

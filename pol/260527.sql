@@ -165,6 +165,19 @@ ORDER BY DAY
 -- 문제) LO_OUT_M 테이블을 메인 쿼리에서 사용하고 LO_OUT_D 테이블을 스칼라 쿼리에서 사용하기
 -- 조건에 해당하는 INVOICE_NO에 대해 ORDER_QTY이 가장 큰 LINE_NO를 함께 구하기
 
+--SELECT INVOICE_NO, OUT_TYPE_DIV, OUT_BOX_DIV, MAX(D1.LINE_NO) AS MAX_LINE_NO
+--  FROM LO_OUT_M M1
+-- WHERE OUTBOUND_DATE = '2019-06-03'
+--   AND  IN (
+--                     )
+--   
+--(INVOICE_NO, ORDER_QTY) IN (
+--                            SELECT D1.INVOICE_NO, MAX(D1.ORDER_QTY) AS MAX_ORDER_QTY
+--                              FROM LO_OUT_D D1
+--                             GROUP BY D1.INVOICE_NO
+--                            HAVING INVOICE_NO = D1.INVOICE_NO
+--                          )
+
 -- 교수님 풀이
 SELECT INVOICE_NO, OUT_TYPE_DIV, OUT_BOX_DIV
        , TO_NUMBER(SUBSTR(MAX_VAL, 1, 5)) AS MAX_ORDER_QTY
